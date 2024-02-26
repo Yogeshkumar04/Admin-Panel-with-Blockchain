@@ -1,0 +1,10 @@
+<!-- templates/admin/set_user_balance.html -->
+{% extends "admin/base.html" %}
+{% block content %}
+<h2>Set Balance for User: {{ user.username }}</h2>
+<form method="POST">
+    <label for="balance">Balance:</label>
+    <input type="number" step="0.01" name="balance" required value="{{ user.balance }}">
+    <input type="submit" value="Update Balance">
+</form>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "user/layout.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Withdraw Funds</h2>
+    <p>Your current balance is: ${{ user.balance }}</p>
+    <form action="{{ url_for('user_withdraw') }}" method="post">
+        <div class="form-group">
+            <label for="withdrawal_amount">Amount:</label>
+            <input type="number" step="0.01" name="withdrawal_amount" id="withdrawal_amount" class="form-control" placeholder="Enter amount to withdraw" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Withdrawal</button>
+    </form>
+</div>
+{% endblock %}
