@@ -122,7 +122,7 @@ def set_user_balance(user_id):
         return render_template('admin/set_user_balance.html', user=user, current_balance=user.balance or 0)
 
 
-# admin get all user 
+#admin get all user 
 @app.route('/admin/get-all-user', methods=["POST","GET"])
 def adminGetAllUser():
     if not session.get('admin_id'):
@@ -133,6 +133,20 @@ def adminGetAllUser():
         return render_template('admin/all-user.html',title='Approve User',users=users)
     else:
         users=User.query.all()
+        users_with_balance = []  # List to store user details along with balance
+        for user in users:
+            user_data = {
+            'id': user.id,
+            'fname': user.fname,
+            'lname': user.lname,
+            'email': user.email,
+            'username': user.username,
+            'edu': user.edu,
+            'status': "Approved" if user.status == 1 else "Not Approved",
+            'balance': user.balance  # Fetch the balance of each user
+        }
+        users_with_balance.append(user_data)
+        
         return render_template('admin/all-user.html',title='Approve User',users=users)
 
 # admin approve user account
