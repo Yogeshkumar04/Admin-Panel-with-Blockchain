@@ -36,7 +36,7 @@
                             <td>{{users.username}}</td>
                             <td>{{users.email}}</td>
                             <td>{{users.edu}}</td>
-                            <td>${{ users.balance | round(2) }}</td> <!-- Format balance to two decimal places -->
+                            <td>{{ users.balance | round(2) }}</td> <!-- Format balance to two decimal places -->
                         <td>
                             <!-- Link to the withdrawal page -->
                             <a href="{{ url_for('user_withdraw') }}" class="btn btn-primary">Withdraw Funds</a>

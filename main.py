@@ -333,7 +333,7 @@ def user_withdraw():
         if withdrawal_amount and 0 < withdrawal_amount <= user.balance:
             user.balance -= withdrawal_amount
             db.session.commit()
-            flash(f'Withdrawal of ${withdrawal_amount} successful.', 'success')
+            flash(f'Withdrawal of {withdrawal_amount} successful.', 'success')
             return redirect(url_for('userDashboard'))
         else:
             flash('Invalid withdrawal amount.', 'danger')
