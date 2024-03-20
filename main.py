@@ -190,6 +190,19 @@ def adminLogout():
         session['admin_name'] = None
         return redirect('/')
 
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+def delete_user(user_id):
+    if not session.get('admin_id'):
+        flash('Please login to perform this action.', 'danger')
+        return redirect('/admin/')
+    
+    user_to_delete = User.query.get_or_404(user_id)
+    db.session.delete(user_to_delete)
+    db.session.commit()
+    flash('User account has been successfully deleted.', 'success')
+    return redirect('/admin/get-all-user')
+
+
 # User Area
 @app.route('/user/', methods=["POST","GET"])
 def userIndex():
