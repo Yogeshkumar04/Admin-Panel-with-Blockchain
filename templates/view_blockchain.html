@@ -27,6 +27,17 @@
         .transactions {
             margin-top: 15px;
         }
+        .wallet-address {
+            word-wrap: break-word; /* Ensures the address wraps and does not overflow */
+            font-family: monospace; /* Makes it easier to read the address */
+        }
+        .copy-button {
+            cursor: pointer;
+            color: #007bff;
+        }
+        .copy-button:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body class="container">
@@ -45,9 +56,9 @@
                             <p><strong>Request Type:</strong> {{ transaction.type | default('N/A') }}</p>
                             <p><strong>User ID:</strong> {{ transaction.user_id }}</p>
                             <p><strong>Amount:</strong> {{ transaction.amount }}</p>
-                            
+                            <p class="wallet-address"><strong>Wallet Address:</strong> {{ transaction.wallet_address }}</p>
                             <p><strong>Timestamp:</strong> {{ transaction.timestamp }}</p>
-
+                            <span class="copy-button" onclick="copyToClipboard('{{ transaction.wallet_address }}')">Copy Address</span>
                         </div>
                     {% endfor %}
                 </div>
@@ -59,5 +70,14 @@
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Address copied to clipboard');
+            }, function(err) {
+                alert('Error in copying text: ', err);
+            });
+        }
+    </script>
 </body>
 </html>

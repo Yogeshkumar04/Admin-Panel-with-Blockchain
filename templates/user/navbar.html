@@ -1,14 +1,49 @@
-<div class="row d-flex justify-content-center">
-    <div class="col-xl-3 col-lg-3 col-md-3 my-2 col-sm-12">
-        <a href="/user/dashboard" class="btn btn-info w-full">Dashboard</a>
+<!-- Button navigation row -->
+<div class="row d-flex justify-content-center text-center mb-4">
+    <div class="col-lg-3 col-md-6 my-2">
+        <a href="/user/dashboard" class="btn btn-primary btn-block py-2">Dashboard</a>
     </div>
-    <div class="col-xl-3 col-lg-3 col-md-3 my-2 col-sm-12">
-        <a href="/user/update-profile" class="btn btn-info w-full">Update Profile</a>
+    <div class="col-lg-3 col-md-6 my-2">
+        <a href="/user/update-profile" class="btn btn-primary btn-block py-2">Update Profile</a>
     </div>
-    <div class="col-xl-3 col-lg-3 col-md-3 my-2 col-sm-12">
-        <a href="/user/change-password" class="btn btn-info w-full">Change Password</a>
+    <div class="col-lg-3 col-md-6 my-2">
+        <a href="/user/change-password" class="btn btn-primary btn-block py-2">Change Password</a>
     </div>
-    <div class="col-xl-3 col-lg-3 col-md-3 my-2 col-sm-12">
-        <a href="/user/logout" class="btn btn-danger w-full">Logout</a>
+    <div class="col-lg-3 col-md-6 my-2">
+        <a href="/user/logout" class="btn btn-warning btn-block py-2">Logout</a>
     </div>
 </div>
+
+<!-- User Wallet Address display -->
+<div class="row d-flex justify-content-center mt-4">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                Wallet Information
+            </div>
+            <div class="card-body">
+                <p class="card-text"><strong>User Wallet Address:</strong></p>
+                <p class="text-center font-weight-bold overflow-hidden text-truncate">{{ user.wallet_address }}</p>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary btn-sm" onclick="copyToClipboard('{{ user.wallet_address }}')">Copy Address</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Copy to Clipboard Function
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // You can use a tooltip or a small popup to show this message
+        alert('Wallet address copied to clipboard!');
+    }, function(err) {
+        alert('Failed to copy wallet address: ', err);
+    });
+}
+</script>
+
+<!-- Include these scripts for Bootstrap functionality, if they're not already included -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"></script>

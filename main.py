@@ -18,40 +18,62 @@ db=SQLAlchemy(app)
 bcrypt=Bcrypt(app)
 Session(app)
 
+# # User Class
+# class User(db.Model):
+#     id=db.Column(db.Integer, primary_key=True)
+#     fname=db.Column(db.String(255), nullable=False)
+#     lname=db.Column(db.String(255), nullable=False)
+#     email=db.Column(db.String(255), nullable=False)
+#     username=db.Column(db.String(255), nullable=False)
+#     edu=db.Column(db.String(255), nullable=False)
+#     password=db.Column(db.String(255), nullable=False)
+#     status=db.Column(db.Integer,default=0, nullable=False)
+#     balance = db.Column(db.Float, default=0.0, nullable=False)
+
+# def __repr__(self):
+#     return f'User("{self.id}","{self.fname}","{self.lname}","{self.email}","{self.edu}","{self.username}","{self.status}", "{self.balance}")'
+
+# # create admin Class
+# class Admin(db.Model):
+#     id=db.Column(db.Integer, primary_key=True)
+#     username=db.Column(db.String(255), nullable=False)
+#     password=db.Column(db.String(255), nullable=False)
+
+#     def __repr__(self):
+#         return f'Admin("{self.username}","{self.id}")'
+
 # User Class
 class User(db.Model):
-    id=db.Column(db.Integer, primary_key=True)
-    fname=db.Column(db.String(255), nullable=False)
-    lname=db.Column(db.String(255), nullable=False)
-    email=db.Column(db.String(255), nullable=False)
-    username=db.Column(db.String(255), nullable=False)
-    edu=db.Column(db.String(255), nullable=False)
-    password=db.Column(db.String(255), nullable=False)
-    status=db.Column(db.Integer,default=0, nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    fname = db.Column(db.String(255), nullable=False)
+    lname = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    username = db.Column(db.String(255), nullable=False)
+    edu = db.Column(db.String(255), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.Integer, default=0, nullable=False)
     balance = db.Column(db.Float, default=0.0, nullable=False)
+    wallet_address = db.Column(db.String(255), unique=True, nullable=False)  # New column
 
-def __repr__(self):
-    return f'User("{self.id}","{self.fname}","{self.lname}","{self.email}","{self.edu}","{self.username}","{self.status}", "{self.balance}")'
+    def __repr__(self):
+        return f'User("{self.id}","{self.fname}","{self.lname}","{self.email}","{self.edu}","{self.username}","{self.status}", "{self.balance}")'
 
-# create admin Class
+# Admin Class
 class Admin(db.Model):
-    id=db.Column(db.Integer, primary_key=True)
-    username=db.Column(db.String(255), nullable=False)
-    password=db.Column(db.String(255), nullable=False)
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(255), nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    wallet_address = db.Column(db.String(255), unique=True, nullable=False)  # New column
 
     def __repr__(self):
         return f'Admin("{self.username}","{self.id}")'
+
 
     
 # Main Index
 @app.route('/')
 def index():
     return render_template('index.html', title="")
-
-
-
-
-
 
 # admin loign
 @app.route('/admin/',methods=["POST","GET"])
@@ -88,7 +110,12 @@ def adminDashboard():
     totalUser=User.query.count()
     totalApprove=User.query.filter_by(status=1).count()
     NotTotalApprove=User.query.filter_by(status=0).count()
-    return render_template('admin/dashboard.html',title="Admin Dashboard",totalUser=totalUser,totalApprove=totalApprove,NotTotalApprove=NotTotalApprove)
+
+    # Fetch admin object from the database
+    admin = Admin.query.get_or_404(session['admin_id'])
+
+    return render_template('admin/dashboard.html', title="Admin Dashboard", totalUser=totalUser, totalApprove=totalApprove, NotTotalApprove=NotTotalApprove, admin=admin)
+
 
 # Admin Set User Balance
 @app.route('/admin/set-user-balance/<int:user_id>', methods=['GET', 'POST'])
@@ -118,31 +145,36 @@ def set_user_balance(user_id):
 
 
 #admin get all user 
-@app.route('/admin/get-all-user', methods=["POST","GET"])
+@app.route('/admin/get-all-user', methods=["POST", "GET"])
 def adminGetAllUser():
     if not session.get('admin_id'):
         return redirect('/admin/')
-    if request.method== "POST":
-        search=request.form.get('search')
-        users=User.query.filter(User.username.like('%'+search+'%')).all()
-        return render_template('admin/all-user.html',title='Approve User',users=users)
+    
+    # Fetch admin object from the database
+    admin = Admin.query.get_or_404(session['admin_id'])
+    
+    if request.method == "POST":
+        search = request.form.get('search')
+        users = User.query.filter(User.username.like('%' + search + '%')).all()
+        return render_template('admin/all-user.html', title='Approve User', users=users, admin=admin)
     else:
-        users=User.query.all()
+        users = User.query.all()
         users_with_balance = []  # List to store user details along with balance
         for user in users:
             user_data = {
-            'id': user.id,
-            'fname': user.fname,
-            'lname': user.lname,
-            'email': user.email,
-            'username': user.username,
-            'edu': user.edu,
-            'status': "Approved" if user.status == 1 else "Not Approved",
-            'balance': user.balance  # Fetch the balance of each user
-        }
-        users_with_balance.append(user_data)
-        
-        return render_template('admin/all-user.html',title='Approve User',users=users)
+                'id': user.id,
+                'fname': user.fname,
+                'lname': user.lname,
+                'email': user.email,
+                'username': user.username,
+                'edu': user.edu,
+                'status': "Approved" if user.status == 1 else "Not Approved",
+                'balance': user.balance  # Fetch the balance of each user
+            }
+            users_with_balance.append(user_data)
+
+        return render_template('admin/all-user.html', title='Approve User', users=users_with_balance, admin=admin)
+
 
 # admin approve user account
 @app.route('/admin/approve-user/<int:id>')
@@ -257,7 +289,9 @@ def userRegistration():
                 return redirect('/user/signup')
             else:
                 hash_password = bcrypt.generate_password_hash(password, 10)
-                user = User(fname=fname, lname=lname, email=email, username=username, edu=edu, password=hash_password)
+                private_key, public_key = generate_keys()  # Generate keys
+                wallet_address = public_key.to_string().hex()  # Use public key as wallet address
+                user = User(fname=fname, lname=lname, email=email, username=username, edu=edu, password=hash_password, wallet_address=wallet_address)
                 db.session.add(user)
                 db.session.commit()
                 flash('User Account Creation Successfully, Admin will approve your account in 10 to 30 minutes', 'success')
@@ -274,7 +308,9 @@ def userDashboard():
     if session.get('user_id'):
         id=session.get('user_id')
     users=User().query.filter_by(id=id).first()
-    return render_template('user/dashboard.html',title="User Dashboard",users=users)
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    return render_template('user/dashboard.html',title="User Dashboard",users=users, user=user)
 
 # User Logout
 @app.route('/user/logout')
@@ -357,6 +393,7 @@ def user_withdraw():
             transaction = {
                 'user_id': user.id,
                 'type': 'withdraw',
+                'wallet_address': user.wallet_address,  # Assume this attribute exists on your User model
                 'amount': withdrawal_amount,
                 'timestamp': time()
             }
@@ -426,6 +463,15 @@ if __name__=="__main__":
         # admin = Admin(username='admin', password=bcrypt.generate_password_hash('123456',10))
         # db.session.add(admin)
         # db.session.commit()
-         
+        
+        
+        # # Generate keys for the default admin account
+        # private_key_admin, public_key_admin = generate_keys()
+        # wallet_address_admin = public_key_admin.to_string().hex()
+
+        # # Create the default admin account with generated wallet address
+        # admin = Admin(username='admin', password=bcrypt.generate_password_hash('123456', 10), wallet_address=wallet_address_admin)
+        # db.session.add(admin)
+        # db.session.commit() 
         
     app.run(debug=True)

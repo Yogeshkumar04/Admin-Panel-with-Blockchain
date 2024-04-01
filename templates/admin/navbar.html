@@ -1,14 +1,49 @@
+<!-- Button navigation row -->
 <div class="row d-flex justify-content-center">
-    <div class="col-xl-3 col-lg-3 col-md-3 my-2 col-sm-12">
-        <a href="/admin/dashboard" class="btn btn-info w-full">Dashboard</a>
+    <div class="col-lg-3 col-md-6 my-2">
+        <a href="/admin/dashboard" class="btn btn-primary btn-block">Dashboard</a>
     </div>
-    <div class="col-xl-3 col-lg-3 col-md-3 my-2 col-sm-12">
-        <a href="/admin/get-all-user" class="btn btn-info w-full">All User</a>
+    <div class="col-lg-3 col-md-6 my-2">
+        <a href="/admin/get-all-user" class="btn btn-primary btn-block">All User</a>
     </div>
-    <div class="col-xl-3 col-lg-3 col-md-3 my-2 col-sm-12">
-        <a href="/admin/change-admin-password" class="btn btn-info w-full">Change Password</a>
+    <div class="col-lg-3 col-md-6 my-2">
+        <a href="/admin/change-admin-password" class="btn btn-primary btn-block">Change Password</a>
     </div>
-    <div class="col-xl-3 col-lg-3 col-md-3 my-2 col-sm-12">
-        <a href="/admin/logout" class="btn btn-danger w-full">Logout</a>
+    <div class="col-lg-3 col-md-6 my-2">
+        <a href="/admin/logout" class="btn btn-warning btn-block">Logout</a>
     </div>
 </div>
+
+<!-- Admin Wallet Address display -->
+<div class="row d-flex justify-content-center mt-4">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                Wallet Information
+            </div>
+            <div class="card-body">
+                <p class="card-text"><strong>Admin Wallet Address:</strong></p>
+                <p class="text-center font-weight-bold overflow-hidden text-truncate">{{ admin.wallet_address }}</p>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-info btn-sm copy-btn" onclick="copyToClipboard('{{ admin.wallet_address }}')">Copy Address</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+// Copy to Clipboard Function
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Copying to clipboard was successful!');
+    }, function(err) {
+        alert('Could not copy text: ', err);
+    });
+}
+</script>
+
+<!-- Include this script if you haven't already for the Bootstrap functionality -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"></script>
