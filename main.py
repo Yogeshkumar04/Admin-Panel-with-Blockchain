@@ -1,9 +1,14 @@
-from flask import Flask, flash, render_template, request,redirect, session, url_for
+from flask import Flask, flash, render_template, request,redirect, session, url_for,  jsonify, json, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from flask_bcrypt import Bcrypt
+from blockchain import Block, Blockchain, time, generate_keys
+from datetime import datetime
+
+
 
 app = Flask(__name__)
+blockchain = Blockchain()
 app.config["SECRET_KEY"]='86a48e5e4d3d14c47fc33a97'
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///ums.sqlite"
 app.config["SESSION_PERMANENT"]=False
@@ -28,7 +33,6 @@ class User(db.Model):
 def __repr__(self):
     return f'User("{self.id}","{self.fname}","{self.lname}","{self.email}","{self.edu}","{self.username}","{self.status}", "{self.balance}")'
 
-
 # create admin Class
 class Admin(db.Model):
     id=db.Column(db.Integer, primary_key=True)
@@ -37,16 +41,7 @@ class Admin(db.Model):
 
     def __repr__(self):
         return f'Admin("{self.username}","{self.id}")'
-    
-    
-# # create table
-# db.create_all()
-     
-# insert admin data on time
-# admin = Admin(username='admin', password=bcrypt.generate_password_hash('123456',10))
-# db.session.add(admin)
-# db.session.commit()
-    
+
     
 # Main Index
 @app.route('/')
@@ -358,6 +353,17 @@ def user_withdraw():
     if request.method == 'POST':
         withdrawal_amount = request.form.get('withdrawal_amount', type=float)
         if withdrawal_amount and 0 < withdrawal_amount <= user.balance:
+            # Before updating the balance, log this transaction on the blockchain
+            transaction = {
+                'user_id': user.id,
+                'type': 'withdraw',
+                'amount': withdrawal_amount,
+                'timestamp': time()
+            }
+            blockchain.add_new_transaction(transaction)
+            blockchain.mine()  # Simulate mining to add the transaction as a new block
+
+            # Now, update the user balance
             user.balance -= withdrawal_amount
             db.session.commit()
             flash(f'Withdrawal of {withdrawal_amount} successful.', 'success')
@@ -369,6 +375,48 @@ def user_withdraw():
 
 
 
+@app.route('/mine', methods=['GET'])
+def mine():
+    last_block = blockchain.last_block()
+    new_block = Block(index=last_block.index + 1,
+                      transactions=blockchain.pending_transactions,
+                      timestamp=time(),
+                      previous_hash=last_block.hash)
+
+    new_block.hash = new_block.compute_hash()  # Compute the hash with PoW
+    added = blockchain.add_block(new_block)
+
+    if added:
+        blockchain.pending_transactions = []  # Reset the list of transactions
+        return jsonify({"message": "New block mined and added to the chain", "block_index": new_block.index}), 200
+    else:
+        return jsonify({"message": "New block failed to be added to the chain"}), 500
+
+
+@app.route('/blockchain', methods=['GET'])
+def view_blockchain():
+    chain_data = blockchain.to_dict()  # Get the blockchain in dict format
+    print(json.dumps(chain_data, indent=4))
+    for block in chain_data:
+        # Check if block timestamp is an integer (Unix timestamp), then convert
+        try:
+            block['timestamp'] = datetime.utcfromtimestamp(int(block['timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            # If it's not an integer, it's assumed to be already a correctly formatted string
+            pass
+
+        for transaction in block['transactions']:
+            # Similar check for transaction timestamp
+            try:
+                transaction['timestamp'] = datetime.utcfromtimestamp(int(transaction['timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                # If it's not an integer, it's assumed to be already a correctly formatted string
+                pass
+            
+                   
+    return render_template('view_blockchain.html', chain_data=chain_data)
+
+
 if __name__=="__main__":
     # Create Table:
     with app.app_context():
@@ -378,5 +426,6 @@ if __name__=="__main__":
         # admin = Admin(username='admin', password=bcrypt.generate_password_hash('123456',10))
         # db.session.add(admin)
         # db.session.commit()
+         
         
     app.run(debug=True)

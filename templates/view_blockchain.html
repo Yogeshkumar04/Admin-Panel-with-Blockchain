@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Blockchain</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/css/bootstrap.min.css">
+    <!-- Additional custom styles -->
+    <style>
+        body {
+            padding-top: 20px;
+        }
+        .block {
+            margin-bottom: 30px;
+            padding: 15px;
+            border: 1px solid #eaeaea;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .transaction {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-left: 3px solid #007bff;
+            background-color: #f1f1f1;
+        }
+        .transactions {
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body class="container">
+    <h1 class="mb-4">Blockchain Overview</h1>
+    <div id="blockchain">
+        {% for block in chain_data %}
+            <div class="block">
+                <h2>Block {{ block.index }}</h2>
+                <p><strong>Hash:</strong> {{ block.hash }}</p>
+                <p><strong>Previous Hash:</strong> {{ block.previous_hash }}</p>
+                <p><strong>Timestamp:</strong> {{ block.timestamp }}</p>
+                <div class="transactions">
+                    <h3>Transactions</h3>
+                    {% for transaction in block.transactions %}
+                        <div class="transaction">
+                            <p><strong>Request Type:</strong> {{ transaction.type | default('N/A') }}</p>
+                            <p><strong>User ID:</strong> {{ transaction.user_id }}</p>
+                            <p><strong>Amount:</strong> {{ transaction.amount }}</p>
+                            
+                            <p><strong>Timestamp:</strong> {{ transaction.timestamp }}</p>
+
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <p>No blocks in the blockchain.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

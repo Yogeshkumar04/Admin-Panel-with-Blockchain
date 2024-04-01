@@ -1,0 +1,37 @@
+[
+    {
+        "index": 0,
+        "transactions": [],
+        "timestamp": 1711967601.1815104,
+        "previous_hash": "0",
+        "hash": "6188ca3846707e4b999603071ea4216fa33a791c0086f0457a016d16c514fea9"
+    },
+    {
+        "index": 1,
+        "transactions": [
+            {
+                "user_id": 1,
+                "type": "withdraw",
+                "amount": 20.0,
+                "timestamp": "2024-04-01 10:33:29"
+            }
+        ],
+        "timestamp": 1711967609.0305648,
+        "previous_hash": "6188ca3846707e4b999603071ea4216fa33a791c0086f0457a016d16c514fea9",
+        "hash": "333c90791b4eb36226984fade1ec4bcb136b17435b64dc432b7002bd89c5295f"
+    },
+    {
+        "index": 2,
+        "transactions": [
+            {
+                "user_id": 1,
+                "type": "withdraw",
+                "amount": 123.0,
+                "timestamp": 1711967624.0339413
+            }
+        ],
+        "timestamp": 1711967624.0339413,
+        "previous_hash": "333c90791b4eb36226984fade1ec4bcb136b17435b64dc432b7002bd89c5295f",
+        "hash": "212a047debbb5ce13bdba39f0c875911f470e365b113be149f3e2b287863f02d"
+    }
+]
