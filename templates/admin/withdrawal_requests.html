@@ -1,0 +1,136 @@
+{% extends "admin/layout.html" %}
+
+{% block content %}
+<!-- ... existing code ... -->
+
+<style>
+    .table td, .table th {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    /* Enhance the visibility of the 'Copy' button */
+    .copy-btn {
+        background: transparent;
+        border: none;
+        color: #017bff;
+        cursor: pointer;
+    }
+
+    /* Color-coding for the status */
+    .status-pending { color: #ffc107; }
+    .status-approved { color: #28a745; }
+    .status-denied { color: #dc3545; }
+
+    /* Responsive buttons with appropriate spacing */
+    .btn {
+        margin: 5px;
+        padding: 10px 15px;
+        border-radius: 5px; /* Rounded corners */
+    }
+
+    /* Responsive table */
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+        }
+    }
+
+    .btn-approve {
+        color: white;
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    .btn-deny {
+        color: white;
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn:hover {
+        opacity: 0.8;
+    }
+
+    .btn:active {
+        transform: scale(0.98);
+    }
+
+    .tooltip-inner {
+        background-color: #333;
+        color: #fff;
+        border-radius: 4px;
+        padding: 5px;
+        font-size: 0.875rem;
+    }
+
+    .btn-copy, .btn-approve, .btn-deny {
+        font-size: 16px; /* Larger font-size for better readability */
+    }
+
+    .btn-copy::after {
+        content: '📋';
+    }
+
+    .btn-approve::after {
+        content: '✅';
+    }
+
+    .btn-deny::after {
+        content: '❌';
+    }
+
+    /* When a row is processed, make it less prominent */
+    .row-processed {
+        opacity: 0.6;
+
+</style>
+
+
+<div class="table-responsive">
+    <table class="table">
+        <thead class="thead-light">
+            <tr>
+                <th>ID</th>
+                <th>User ID</th>
+                <th>Amount</th>
+                <th>From Wallet Address</th>
+                <th>To Wallet Address</th>
+                <th>Status</th>
+                <th>Timestamp</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for request in withdrawal_requests %}
+            <tr>
+                <td>{{ request.id }}</td>
+                <td>{{ request.user_id }}</td>
+                <td>{{ request.amount }}</td>
+                <td class="wallet-address">
+                    <span title="{{ request.from_wallet_address }}">{{ request.from_wallet_address[:6] }}…{{ request.from_wallet_address[-4:] }}</span>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('{{ request.from_wallet_address }}')">Copy</button>
+                </td>
+                <td class="wallet-address">
+                    <span title="{{ request.wallet_address }}">{{ request.wallet_address[:6] }}…{{ request.wallet_address[-4:] }}</span>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('{{ request.wallet_address }}')">Copy</button>
+                </td>
+                <td class="status-{{ request.status|lower }}">{{ request.status }}</td>
+                <td class="timestamp">{{ request.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>
+                    <!-- Disable the "Approve" button if the status is not 'Pending' -->
+                    <button onclick="location.href='{{ url_for('approve_withdrawal', request_id=request.id) }}'"
+                        class="btn btn-approve {{ 'btn-disabled' if request.status != 'Pending' else '' }}"
+                        {{ 'disabled' if request.status != 'Pending' else '' }}>Approve</button>
+                    <!-- Disable the "Deny" button if the status is not 'Pending' -->
+                    <button onclick="location.href='{{ url_for('deny_withdrawal', request_id=request.id) }}'"
+                        class="btn btn-deny {{ 'btn-disabled' if request.status != 'Pending' else '' }}"
+                        {{ 'disabled' if request.status != 'Pending' else '' }}>Deny</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ... existing code ... -->
+{% endblock content %}

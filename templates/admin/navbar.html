@@ -13,9 +13,16 @@
         <a href="/admin/logout" class="btn btn-warning btn-block">Logout</a>
     </div>
 </div>
+<div class="my-3">
+    <a href="{{ url_for('admin_withdrawal_requests') }}" class="btn btn-primary">View Withdrawal Requests</a>
+</div>
+<div class="my-3">
+    <a href="/blockchain" class="btn btn-dark">View Blockchain</a>
+</div>
+
 
 <!-- Admin Wallet Address display -->
-<div class="row d-flex justify-content-center mt-4">
+<div class="row d-flex justify-content-left mt-4">
     <div class="col-12 col-md-8 col-lg-6">
         <div class="card border-info">
             <div class="card-header bg-info text-white">

@@ -44,28 +44,34 @@
     <h1 class="mb-4">Blockchain Overview</h1>
     <div id="blockchain">
         {% for block in chain_data %}
-            <div class="block">
-                <h2>Block {{ block.index }}</h2>
-                <p><strong>Hash:</strong> {{ block.hash }}</p>
-                <p><strong>Previous Hash:</strong> {{ block.previous_hash }}</p>
-                <p><strong>Timestamp:</strong> {{ block.timestamp }}</p>
-                <div class="transactions">
-                    <h3>Transactions</h3>
-                    {% for transaction in block.transactions %}
-                        <div class="transaction">
-                            <p><strong>Request Type:</strong> {{ transaction.type | default('N/A') }}</p>
-                            <p><strong>User ID:</strong> {{ transaction.user_id }}</p>
-                            <p><strong>Amount:</strong> {{ transaction.amount }}</p>
-                            <p class="wallet-address"><strong>Wallet Address:</strong> {{ transaction.wallet_address }}</p>
-                            <p><strong>Timestamp:</strong> {{ transaction.timestamp }}</p>
+        <div class="block">
+            <h2>Block {{ block.index }}</h2>
+            <p><strong>Hash:</strong> {{ block.hash }}</p>
+            <p><strong>Previous Hash:</strong> {{ block.previous_hash }}</p>
+            <p><strong>Timestamp:</strong> {{ block.timestamp }}</p>
+            <div class="transactions">
+                <h3>Transactions</h3>
+                {% for transaction in block.transactions %}
+                    <div class="transaction">
+                        <strong>Request Type:</strong> {{ transaction.request_type | default('N/A')}}<br>
+                        <p><strong>User ID:</strong> {{ transaction.user_id | default('User ID not available') }}</p>
+                        <p><strong>Amount:</strong> {{ transaction.amount }}</p>
+                        <p class="wallet-address">
+                            <strong>Wallet Address:</strong> 
+                            {{ transaction.wallet_address | default('Wallet address not available') }}
+                        </p>
+                        {% if transaction.wallet_address %}
                             <span class="copy-button" onclick="copyToClipboard('{{ transaction.wallet_address }}')">Copy Address</span>
-                        </div>
-                    {% endfor %}
-                </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p>No transactions in this block.</p>
+                {% endfor %}
             </div>
-        {% else %}
-            <p>No blocks in the blockchain.</p>
-        {% endfor %}
+        </div>
+    {% else %}
+        <p>No blocks in the blockchain.</p>
+    {% endfor %}
     </div>
 
     <!-- Bootstrap Bundle with Popper -->

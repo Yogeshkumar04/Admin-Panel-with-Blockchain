@@ -37,11 +37,11 @@
                         <td>{{ user.email }}</td>
                         <td>{{ user.edu }}</td>
                         
-                        <td>
+                        <td id="status-{{ user.id }}">
                             {% if user.status == 1 %}
-                            Approved
+                                Approved
                             {% else %}
-                            <a href="/admin/approve-user/{{ user.id }}" class="btn btn-warning">Approve</a>
+                                <button id="approve-btn-{{ user.id }}" class="btn btn-warning" onclick="approveUser({{ user.id }})">Approve</button>
                             {% endif %}
                         </td>
                         <td>
@@ -66,4 +66,29 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Function to handle approval
+    function approveUser(userId) {
+        var btn = document.getElementById('approve-btn-' + userId);
+        btn.innerHTML = 'Approved';
+        btn.disabled = true;
+        // Store approval status in local storage
+        localStorage.setItem('status-' + userId, 'Approved');
+    }
+
+    // Check and update approval status on page load
+    window.onload = function() {
+        {% for user in users %}
+            var status = localStorage.getItem('status-{{ user.id }}');
+            if (status === 'Approved') {
+                var btn = document.getElementById('approve-btn-{{ user.id }}');
+                if (btn) {
+                    btn.innerHTML = 'Approved';
+                    btn.disabled = true;
+                }
+            }
+        {% endfor %}
+    }
+</script>
 {% endblock content %}

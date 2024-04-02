@@ -67,6 +67,21 @@ class Admin(db.Model):
 
     def __repr__(self):
         return f'Admin("{self.username}","{self.id}")'
+    
+    
+# Withdraw Class
+class WithdrawalRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    wallet_address = db.Column(db.String(255), nullable=False)
+    from_wallet_address = db.Column(db.String(255), nullable=False)  # Add this line
+    status = db.Column(db.String(50), nullable=False, default='Pending')
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<WithdrawalRequest {self.id} - Amount: {self.amount} - Status: {self.status}>'
+
 
 
     
@@ -230,6 +245,129 @@ def delete_user(user_id):
     return redirect('/admin/get-all-user')
 
 
+@app.route('/admin/withdrawal-requests')
+def admin_withdrawal_requests():
+    if 'admin_id' not in session:
+        return redirect('/admin/')
+    
+    withdrawal_requests = WithdrawalRequest.query.all()
+    return render_template('admin/withdrawal_requests.html', withdrawal_requests=withdrawal_requests)
+
+# @app.route('/admin/withdrawal-requests/approve/<int:request_id>')
+# def approve_withdrawal(request_id):
+#     # Fetch the request
+#     withdrawal_request = WithdrawalRequest.query.get_or_404(request_id)
+    
+#     # Check if the request has already been processed
+#     if withdrawal_request.status != 'Pending':
+#         flash('This request has already been processed.', 'warning')
+#         return redirect(url_for('admin_withdrawal_requests'))
+
+#     # Fetch the user who made the request
+#     user = User.query.get(withdrawal_request.user_id)
+
+#     # Check if the user has enough balance
+#     if user.balance < withdrawal_request.amount:
+#         flash('User does not have enough balance to withdraw.', 'danger')
+#         return redirect(url_for('admin_withdrawal_requests'))
+
+#     # Deduct the amount from user's balance
+#     user.balance -= withdrawal_request.amount
+    
+#     # Set the status of the withdrawal request to 'Approved'
+#     withdrawal_request.status = 'Approved'
+    
+#     # Process blockchain transaction
+#     transaction = {
+#         'request_type': 'withdraw',
+#         'from': withdrawal_request.from_wallet_address,
+#         'to': withdrawal_request.wallet_address,
+#         'amount': withdrawal_request.amount,
+#         'user_id': user.id,
+#         'wallet_address': withdrawal_request.from_wallet_address,
+#         'timestamp': datetime.utcnow().timestamp()
+#     }
+#     blockchain.add_new_transaction(transaction)
+#     new_block = blockchain.mine()  # Simulate mining to add the transaction as a new block
+
+#     if new_block is not None:
+#         # Successfully mined a new block and added to the blockchain
+#         db.session.commit()
+#         flash('Withdrawal approved and transaction added to the blockchain.', 'success')
+#     else:
+#         # Failed to mine a new block, add flash message and revert balance update
+#         user.balance += withdrawal_request.amount  # Revert balance
+#         flash('Failed to process the blockchain transaction.', 'danger')
+
+#     return redirect(url_for('admin_withdrawal_requests'))
+
+# @app.route('/admin/withdrawal-requests/deny/<int:request_id>')
+# def deny_withdrawal(request_id):
+#     # Your logic to deny the withdrawal request
+#     request = WithdrawalRequest.query.get_or_404(request_id)
+#     request.status = 'Denied'
+#     db.session.commit()
+#     flash('Withdrawal request has been denied.', 'danger')
+#     return redirect(url_for('admin_withdrawal_requests'))
+
+@app.route('/admin/withdrawal-requests/approve/<int:request_id>')
+def approve_withdrawal(request_id):
+    withdrawal_request = WithdrawalRequest.query.get_or_404(request_id)
+    
+    # Check if the request has not been processed yet
+    if withdrawal_request.status == 'Pending':
+        user = User.query.get(withdrawal_request.user_id)
+        
+        # Check if the user has enough balance
+        if user.balance >= withdrawal_request.amount:
+            # Deduct the amount from user's balance and set the status to 'Approved'
+            user.balance -= withdrawal_request.amount
+            withdrawal_request.status = 'Approved'
+
+            # Add transaction to blockchain and attempt to mine
+            transaction = {
+            'request_type': 'withdraw',
+            'from': withdrawal_request.from_wallet_address,
+            'to': withdrawal_request.wallet_address,
+            'amount': withdrawal_request.amount,
+            'user_id': user.id,
+            'wallet_address': withdrawal_request.from_wallet_address,
+            'timestamp': datetime.utcnow().timestamp()
+        }
+            blockchain.add_new_transaction(transaction)
+            new_block = blockchain.mine()
+
+            if new_block:
+                db.session.commit()
+                flash('Withdrawal approved and transaction added to the blockchain.', 'success')
+            else:
+                # If the mining failed, revert the balance deduction
+                user.balance += withdrawal_request.amount
+                flash('Failed to process the blockchain transaction.', 'danger')
+        else:
+            flash('User does not have enough balance to withdraw.', 'danger')
+    else:
+        flash('This request has already been processed.', 'warning')
+
+    return redirect(url_for('admin_withdrawal_requests'))
+
+@app.route('/admin/withdrawal-requests/deny/<int:request_id>')
+def deny_withdrawal(request_id):
+    request = WithdrawalRequest.query.get_or_404(request_id)
+    
+    # Check if the request has not been processed yet
+    if request.status == 'Pending':
+        request.status = 'Denied'
+        db.session.commit()
+        flash('Withdrawal request has been denied.', 'danger')
+    else:
+        flash('This request has already been processed.', 'warning')
+
+    return redirect(url_for('admin_withdrawal_requests'))
+
+
+
+
 # User Area
 @app.route('/user/', methods=["POST","GET"])
 def userIndex():
@@ -378,6 +516,102 @@ def userUpdateProfile():
         return render_template('user/update-profile.html',title="Update Profile",users=users)
 
 # User Withdraw Funds
+# @app.route('/user/withdraw', methods=['GET', 'POST'])
+# def user_withdraw():
+#     # Ensure the user is logged in
+#     if 'user_id' not in session:
+#         flash('Please log in to access this page.', 'warning')
+#         return redirect(url_for('userIndex'))
+
+#     user = User.query.get(session['user_id'])
+#     if request.method == 'POST':
+#         withdrawal_amount = request.form.get('withdrawal_amount', type=float)
+#         if withdrawal_amount and 0 < withdrawal_amount <= user.balance:
+#             # Before updating the balance, log this transaction on the blockchain
+#             transaction = {
+#                 'user_id': user.id,
+#                 'type': 'withdraw',
+#                 'wallet_address': user.wallet_address,  # Assume this attribute exists on your User model
+#                 'amount': withdrawal_amount,
+#                 'timestamp': time()
+#             }
+#             blockchain.add_new_transaction(transaction)
+#             blockchain.mine()  # Simulate mining to add the transaction as a new block
+
+#             # Now, update the user balance
+#             user.balance -= withdrawal_amount
+#             db.session.commit()
+#             flash(f'Withdrawal of {withdrawal_amount} successful.', 'success')
+#             return redirect(url_for('userDashboard'))
+#         else:
+#             flash('Invalid withdrawal amount.', 'danger')
+
+#     return render_template('user/withdraw.html', user=user)
+
+# @app.route('/user/withdraw', methods=['GET', 'POST'])
+# def user_withdraw():
+#     if 'user_id' not in session:
+#         flash('Please log in to access this page.', 'warning')
+#         return redirect(url_for('userIndex'))
+
+#     user = User.query.get(session['user_id'])
+#     # Fetch the admin's wallet address; assuming the first admin or a specific admin by ID
+#     admin_wallet_address = Admin.query.first().wallet_address  # Adjust based on your admin selection logic
+
+#     if request.method == 'POST':
+#         withdrawal_amount = request.form.get('withdrawal_amount', type=float)
+#         if withdrawal_amount and 0 < withdrawal_amount <= user.balance:
+#             # Process the withdrawal
+#             transaction = {
+#                 'user_id': user.id,
+#                 'type': 'withdraw',
+#                 'wallet_address': user.wallet_address,  # User's wallet address
+#                 'amount': withdrawal_amount,
+#                 'timestamp': time()
+#             }
+#             blockchain.add_new_transaction(transaction)
+#             blockchain.mine()  # Simulate mining to add the transaction as a new block
+
+#             user.balance -= withdrawal_amount
+#             db.session.commit()
+#             flash(f'Withdrawal of {withdrawal_amount} successful.', 'success')
+#             return redirect(url_for('userDashboard'))
+#         else:
+#             flash('Invalid withdrawal amount.', 'danger')
+
+#     # Pass the admin_wallet_address to the template along with the user object
+#     return render_template('user/withdraw.html', user=user, admin_wallet_address=admin_wallet_address)
+
+# @app.route('/user/withdraw', methods=['GET', 'POST'])
+# def user_withdraw():
+#     # Ensure the user is logged in
+#     if 'user_id' not in session:
+#         flash('Please log in to access this page.', 'warning')
+#         return redirect(url_for('userIndex'))
+
+#     user = User.query.get(session['user_id'])
+#     admin_wallet_address = Admin.query.first().wallet_address
+
+#     if request.method == 'POST':
+#         withdrawal_amount = request.form.get('withdrawal_amount', type=float)
+#         if withdrawal_amount and 0 < withdrawal_amount <= user.balance:
+#             # Create a new withdrawal request instead of processing immediately
+#             new_request = WithdrawalRequest(
+#                 user_id=user.id,
+#                 amount=withdrawal_amount,
+#                 wallet_address=admin_wallet_address,  # Admin's wallet address
+#                 from_wallet_address=user.wallet_address,  # User's wallet address
+#                 status='Pending'
+#             )
+#             db.session.add(new_request)
+#             db.session.commit()
+#             flash(f'Withdrawal request for {withdrawal_amount} submitted.', 'success')
+#             return redirect(url_for('userDashboard'))
+#         else:
+#             flash('Invalid withdrawal amount.', 'danger')
+
+#     return render_template('user/withdraw.html', user=user)
+
 @app.route('/user/withdraw', methods=['GET', 'POST'])
 def user_withdraw():
     # Ensure the user is logged in
@@ -386,32 +620,44 @@ def user_withdraw():
         return redirect(url_for('userIndex'))
 
     user = User.query.get(session['user_id'])
+    admin = Admin.query.first()
+    if not admin:
+        flash('Admin wallet address not found.', 'danger')
+        return redirect(url_for('userDashboard'))
+
+    admin_wallet_address = admin.wallet_address
+
     if request.method == 'POST':
         withdrawal_amount = request.form.get('withdrawal_amount', type=float)
-        if withdrawal_amount and 0 < withdrawal_amount <= user.balance:
-            # Before updating the balance, log this transaction on the blockchain
-            transaction = {
-                'user_id': user.id,
-                'type': 'withdraw',
-                'wallet_address': user.wallet_address,  # Assume this attribute exists on your User model
-                'amount': withdrawal_amount,
-                'timestamp': time()
-            }
-            blockchain.add_new_transaction(transaction)
-            blockchain.mine()  # Simulate mining to add the transaction as a new block
-
-            # Now, update the user balance
-            user.balance -= withdrawal_amount
-            db.session.commit()
-            flash(f'Withdrawal of {withdrawal_amount} successful.', 'success')
-            return redirect(url_for('userDashboard'))
+        if withdrawal_amount is None:
+            flash('Please enter a valid withdrawal amount.', 'danger')
+        elif withdrawal_amount <= 0:
+            flash('Withdrawal amount must be greater than zero.', 'danger')
+        elif withdrawal_amount > user.balance:
+            flash('Insufficient balance for this withdrawal.', 'danger')
         else:
-            flash('Invalid withdrawal amount.', 'danger')
+            # Create a new withdrawal request
+            new_request = WithdrawalRequest(
+                user_id=user.id,
+                amount=withdrawal_amount,
+                wallet_address=admin_wallet_address,  # Admin's wallet address
+                from_wallet_address=user.wallet_address,  # User's wallet address
+                status='Pending'
+            )
+            db.session.add(new_request)
+            db.session.commit()
+            flash(f'Withdrawal request for {withdrawal_amount} submitted. Awaiting approval.', 'success')
+            return redirect(url_for('userDashboard'))
 
-    return render_template('user/withdraw.html', user=user)
+    # Make sure you are passing admin_wallet_address in the context
+    return render_template('user/withdraw.html', user=user, admin_wallet_address=admin_wallet_address)
 
 
 
+
+
+
+# mining
 @app.route('/mine', methods=['GET'])
 def mine():
     last_block = blockchain.last_block()
@@ -430,28 +676,57 @@ def mine():
         return jsonify({"message": "New block failed to be added to the chain"}), 500
 
 
+# @app.route('/blockchain', methods=['GET'])
+# def view_blockchain():
+#     chain_data = blockchain.to_dict()  # Get the blockchain in dict format
+#     print(json.dumps(chain_data, indent=4))
+#     for block in chain_data:
+#         # Check if block timestamp is an integer (Unix timestamp), then convert
+#         try:
+#             block['timestamp'] = datetime.utcfromtimestamp(int(block['timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
+#         except ValueError:
+#             # If it's not an integer, it's assumed to be already a correctly formatted string
+#             pass
+
+#         for transaction in block['transactions']:
+#             # Similar check for transaction timestamp
+#             try:
+#                 transaction['timestamp'] = datetime.utcfromtimestamp(int(transaction['timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
+#             except ValueError:
+#                 # If it's not an integer, it's assumed to be already a correctly formatted string
+#                 pass
+            
+                   
+#     return render_template('view_blockchain.html', chain_data=chain_data)
+
 @app.route('/blockchain', methods=['GET'])
 def view_blockchain():
     chain_data = blockchain.to_dict()  # Get the blockchain in dict format
+    
+    # Ensure the data is displayed in a readable format for the console output
     print(json.dumps(chain_data, indent=4))
+    
     for block in chain_data:
-        # Check if block timestamp is an integer (Unix timestamp), then convert
-        try:
-            block['timestamp'] = datetime.utcfromtimestamp(int(block['timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            # If it's not an integer, it's assumed to be already a correctly formatted string
-            pass
+        # Format block timestamp
+        block['timestamp'] = format_timestamp(block.get('timestamp'))
 
         for transaction in block['transactions']:
-            # Similar check for transaction timestamp
-            try:
-                transaction['timestamp'] = datetime.utcfromtimestamp(int(transaction['timestamp'])).strftime('%Y-%m-%d %H:%M:%S')
-            except ValueError:
-                # If it's not an integer, it's assumed to be already a correctly formatted string
-                pass
-            
-                   
+            # Ensure 'wallet_address' and 'user_id' are present, provide default if not
+            transaction['wallet_address'] = transaction.get('wallet_address', 'Wallet address not available')
+            transaction['user_id'] = transaction.get('user_id', 'User ID not available')
+            # Format transaction timestamp
+            transaction['timestamp'] = format_timestamp(transaction.get('timestamp'))
+    
     return render_template('view_blockchain.html', chain_data=chain_data)
+
+def format_timestamp(unix_time):
+    """Helper function to format the Unix timestamp to a human-readable format"""
+    try:
+        return datetime.utcfromtimestamp(int(unix_time)).strftime('%Y-%m-%d %H:%M:%S')
+    except (ValueError, TypeError):
+        return "Timestamp not available"
+
+
 
 
 if __name__=="__main__":
@@ -465,7 +740,7 @@ if __name__=="__main__":
         # db.session.commit()
         
         
-        # # Generate keys for the default admin account
+        # Generate keys for the default admin account
         # private_key_admin, public_key_admin = generate_keys()
         # wallet_address_admin = public_key_admin.to_string().hex()
 
